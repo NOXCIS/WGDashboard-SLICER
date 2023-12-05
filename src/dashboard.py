@@ -5,7 +5,7 @@ Under Apache-2.0 License
 
 import sqlite3
 import configparser
-import hashlib
+import bcrypt 
 import ipaddress
 import json
 # Python Built-in Library
@@ -24,8 +24,7 @@ import ifcfg
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify, g
 from flask_qrcode import QRcode
 from icmplib import ping, traceroute
-# TESTING
-#from flask_socketio import SocketIO
+
 
 # Import other python files
 from util import *
@@ -47,9 +46,11 @@ DASHBOARD_CONF = os.path.join(configuration_path, 'wg-dashboard.ini')
 UPDATE = None
 
 # Flask App Configuration
-app = Flask("WGDashboard")
+app = Flask("WireGate")
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 5206928
-app.secret_key = secrets.token_urlsafe(16)
+wg_dash_appkey = os.environ.get('WG_DASH_SECRET_KEY')
+app.secret_key = wg_dash_appkey
+
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # Enable QR Code Generator
@@ -743,13 +744,14 @@ def auth():
     """
     data = request.get_json()
     config = get_dashboard_conf()
-    password = hashlib.sha256(data['password'].encode())
-    if password.hexdigest() == config["Account"]["password"] \
-            and data['username'] == config["Account"]["username"]:
+    saved_password_hash = config["Account"]["password"]
+    
+    # Verify the password using bcrypt
+    if bcrypt.checkpw(data['password'].encode(), saved_password_hash.encode()):
         session['username'] = data['username']
-        session.permanent = True
         config.clear()
         return jsonify({"status": True, "msg": ""})
+    
     config.clear()
     return jsonify({"status": False, "msg": "Username or Password is incorrect."})
 
@@ -905,10 +907,19 @@ def update_pwd():
     """
 
     config = get_dashboard_conf()
-    if hashlib.sha256(request.form['currentpass'].encode()).hexdigest() == config.get("Account", "password"):
-        if hashlib.sha256(request.form['newpass'].encode()).hexdigest() == hashlib.sha256(
-                request.form['repnewpass'].encode()).hexdigest():
-            config.set("Account", "password", hashlib.sha256(request.form['repnewpass'].encode()).hexdigest())
+    saved_password_hash = config.get("Account", "password")
+    current_password = request.form['currentpass']
+    new_password = request.form['newpass']
+    rep_new_password = request.form['repnewpass']
+
+    # Verify the current password using bcrypt
+    if bcrypt.checkpw(current_password.encode(), saved_password_hash.encode()):
+        # Check if the new passwords match
+        if new_password == rep_new_password:
+            # Hash the new password and update the config
+            new_password_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
+            config.set("Account", "password", new_password_hash.decode())
+
             try:
                 set_dashboard_conf(config)
                 session['message'] = "Password update successfully!"
@@ -1756,9 +1767,17 @@ def init_dashboard():
     if "Account" not in config:
         config['Account'] = {}
     if "username" not in config['Account']:
-        config['Account']['username'] = 'admin'
+        wg_dash_user = os.environ.get('WG_DASH_USER')
+        config['Account']['username'] = wg_dash_user
     if "password" not in config['Account']:
-        config['Account']['password'] = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+        wg_dash_pass = os.environ.get('WG_DASH_PASS')
+        # Hash the password using bcrypt
+        salt = bcrypt.gensalt(rounds=12)
+        hashed_password_bytes = bcrypt.hashpw(wg_dash_pass.encode('utf-8'), salt)
+        # Convert the hashed password bytes to a string and remove the leading 'b'
+        hashed_password_str = hashed_password_bytes.decode('utf-8').lstrip('b')
+        hashpassword_output = f"{hashed_password_str}"
+        config['Account']['password'] = hashpassword_output
     # Default dashboard server setting
     if "Server" not in config:
         config['Server'] = {}
@@ -1782,17 +1801,22 @@ def init_dashboard():
     if "Peers" not in config:
         config['Peers'] = {}
     if 'peer_global_DNS' not in config['Peers']:
-        config['Peers']['peer_global_DNS'] = '1.1.1.1'
+        wg_dash_global_dns = os.environ.get('WG_DASH_DNS')
+        config['Peers']['peer_global_DNS'] = wg_dash_global_dns
     if 'peer_endpoint_allowed_ip' not in config['Peers']:
-        config['Peers']['peer_endpoint_allowed_ip'] = '0.0.0.0/0'
+        peer_endpoint_allowed_ip = os.environ.get('WG_DASH_PEER_ENDPOINT_ALLOWED_IP')
+        config['Peers']['peer_endpoint_allowed_ip'] = peer_endpoint_allowed_ip
     if 'peer_display_mode' not in config['Peers']:
         config['Peers']['peer_display_mode'] = 'grid'
     if 'remote_endpoint' not in config['Peers']:
-        config['Peers']['remote_endpoint'] = ifcfg.default_interface()['inet']
+        server_ip = os.environ.get('WG_DASH_SERVER_IP')
+        config['Peers']['remote_endpoint'] = server_ip
     if 'peer_MTU' not in config['Peers']:
-        config['Peers']['peer_MTU'] = "1420"
+        wg_dash_mtu = os.environ.get('WG_DASH_MTU')
+        config['Peers']['peer_MTU'] = wg_dash_mtu
     if 'peer_keep_alive' not in config['Peers']:
-        config['Peers']['peer_keep_alive'] = "21"
+        wg_dash_keep_alive = os.environ.get('WG_DASH_KEEP_ALIVE')
+        config['Peers']['peer_keep_alive'] = wg_dash_keep_alive
     set_dashboard_conf(config)
     config.clear()
 
