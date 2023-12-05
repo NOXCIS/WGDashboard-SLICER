@@ -5,3 +5,4 @@ icmplib
 flask-qrcode
 gunicorn
 certbot
+uWSGI
