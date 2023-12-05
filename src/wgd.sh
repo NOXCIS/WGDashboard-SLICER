@@ -1,36 +1,11 @@
 #!/bin/bash
 
-# wgd.sh - Copyright(C) 2021 Donald Zou [https://github.com/donaldzou]
-# Under Apache-2.0 License
-app_name="dashboard.py"
-app_official_name="WGDashboard"
-PID_FILE=./gunicorn.pid
-environment=$(if [[ $ENVIRONMENT ]]; then echo $ENVIRONMENT; else echo 'develop'; fi)
-if [[ $CONFIGURATION_PATH ]]; then
-  cb_work_dir=$CONFIGURATION_PATH/letsencrypt/work-dir
-  cb_config_dir=$CONFIGURATION_PATH/letsencrypt/config-dir
-else
-  cb_work_dir=/etc/letsencrypt
-  cb_config_dir=/var/lib/letsencrypt
-fi
-
-dashes='------------------------------------------------------------'
-equals='============================================================'
-
-
-
-
-
-
-
-
-
 
 start_wgd () {
   echo -e "Start Dashboard--------------------------------------------------------------------------------\n"
   echo ""
   echo ""
-  uwsgi --module wsgi:app --protocol http --http-timeout 86400 --socket 0.0.0.0:80 --home /usr --workers 10 --processes 4 --threads 4 --master --buffer-size 32768 --py-autoreload 1 --vacuum --die-on-term
+    uwsgi --ini wg-uwsgi.ini 
   echo "--------------------------------------------------------------------------------"
 }
 

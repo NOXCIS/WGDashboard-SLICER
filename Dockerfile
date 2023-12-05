@@ -20,5 +20,5 @@ COPY ./entrypoint.sh /home/app/entrypoint.sh
 RUN chmod u+x /home/app/entrypoint.sh
 ENTRYPOINT ["/home/app/entrypoint.sh"]
 
-#WORKDIR /home/app 
+WORKDIR /home/app 
 

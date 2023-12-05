@@ -73,3 +73,4 @@ run_wireguard_up #>/dev/null 2>&1 &&
 network_logs_out &&
 #/home/app/wgd.sh debug
 /home/app/wgd.sh start
+

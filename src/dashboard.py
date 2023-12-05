@@ -1,5 +1,6 @@
 """
 < WGDashboard > - Copyright(C) 2021 Donald Zou [https://github.com/donaldzou]
+< Modified > 2023 NOXCIS [https://github.com/NOXCIS]
 Under Apache-2.0 License
 """
 
@@ -163,7 +164,6 @@ Configure DashBoard before start web-server
 def run_dashboard():
     init_dashboard()
     #global UPDATE
-    #UPDATE = check_update()
     config = configparser.ConfigParser(strict=False)
     config.read('wg-dashboard.ini')
     # global app_ip
@@ -1860,34 +1860,6 @@ def traceroute_ip():
 
 
 
-def check_update():
-    """
-    Dashboard check update
-
-    @return: Retunt text with result
-    @rtype: str
-    """
-    config = get_dashboard_conf()
-    try:
-        data = urllib.request.urlopen("https://api.github.com/repos/donaldzou/WGDashboard/releases").read()
-        output = json.loads(data)
-        release = []
-        for i in output:
-            if not i["prerelease"]:
-                release.append(i)
-        if config.get("Server", "version") == release[0]["tag_name"]:
-            result = "false"
-        else:
-            result = "true"
-
-        return result
-    except urllib.error.HTTPError:
-        return "false"
-
-
-
-
-
 """
 Get host and port for web-server
 """
@@ -1904,7 +1876,6 @@ def get_host_bind():
 
 if __name__ == "__main__":
     init_dashboard()
-    #UPDATE = check_update()
     config = configparser.ConfigParser(strict=False)
     config.read('wg-dashboard.ini')
     # global app_ip
