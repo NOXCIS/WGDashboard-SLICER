@@ -24,7 +24,7 @@
                     </div>
                     <div class="row">
                         <div class="col">
-                            <small class="text-muted"><strong>CONFIGURATION</strong></small>
+                            <small class="text-muted"><strong>ZONE</strong></small>
                             <h1 class="mb-3"><samp id="conf_name">{{ title }}</samp></h1>
                         </div>
                         <div class="col">
@@ -457,7 +457,7 @@
     {% include "tools.html" %}
 </body>
 {% include "footer.html" %}
-<script src="{{ url_for('static',filename='js/configuration.js') }}"></script>
+<script src="{{ url_for('static',filename='js/configuration.min.js') }}"></script>
 <script src="{{ url_for('static',filename='js/wireguard.min.js') }}"></script>
 <script>
     configurations.setConfigurationName("{{ conf_data['name'] }}");

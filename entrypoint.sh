@@ -14,6 +14,11 @@ chmod u+x /home/app/FIREWALLS/LAN-only-users/wg2-nat.sh
 chmod u+x /home/app/FIREWALLS/Guest/wg3-dwn.sh
 chmod u+x /home/app/FIREWALLS/Guest/wg3-nat.sh
 
+chmod u+x /home/app/FIREWALLS/IPV6/wg0-dwn.sh
+chmod u+x /home/app/FIREWALLS/IPV6/wg0-nat.sh
+
+chmod u+x /home/app/FIREWALLS/IPV6/wg1-dwn.sh
+chmod u+x /home/app/FIREWALLS/IPV6/wg1-nat.sh
 
 if [ ! -f "/etc/wireguard/wg0.conf" ]; then
     /home/app/wgd.sh newconfig
