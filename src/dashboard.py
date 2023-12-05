@@ -60,12 +60,6 @@ QRcode(app)
 # TODO: use class and object oriented programming
 
 
-def connect_db():
-    """
-    Connect to the database
-    @return: sqlite3.Connection
-    """
-    return sqlite3.connect(os.path.join(configuration_path, 'db', 'wgdashboard.db'))
 
 
 def get_dashboard_conf():
@@ -85,6 +79,123 @@ def set_dashboard_conf(config):
     """
     with open(DASHBOARD_CONF, "w", encoding='utf-8') as conf_object:
         config.write(conf_object)
+
+
+
+
+"""
+Dashboard Initialization
+"""
+
+
+def init_dashboard():
+    """
+    Create dashboard default configuration.
+    """
+    
+
+    # Set Default INI File
+    if not os.path.isfile(DASHBOARD_CONF):
+        open(DASHBOARD_CONF, "w+").close()
+    config = get_dashboard_conf()
+    # Default dashboard account setting
+    if "Account" not in config:
+        config['Account'] = {}
+    if "username" not in config['Account']:
+        wg_dash_user = os.environ.get('WG_DASH_USER')
+        config['Account']['username'] = wg_dash_user
+    if "password" not in config['Account']:
+        wg_dash_pass = os.environ.get('WG_DASH_PASS')
+        # Hash the password using bcrypt
+        salt = bcrypt.gensalt(rounds=12)
+        hashed_password_bytes = bcrypt.hashpw(wg_dash_pass.encode('utf-8'), salt)
+        # Convert the hashed password bytes to a string and remove the leading 'b'
+        hashed_password_str = hashed_password_bytes.decode('utf-8').lstrip('b')
+        hashpassword_output = f"{hashed_password_str}"
+        config['Account']['password'] = hashpassword_output
+    # Default dashboard server setting
+    if "Server" not in config:
+        config['Server'] = {}
+    if 'wg_conf_path' not in config['Server']:
+        config['Server']['wg_conf_path'] = '/etc/wireguard'
+    if 'app_ip' not in config['Server']:
+        config['Server']['app_ip'] = '0.0.0.0'
+    if 'app_port' not in config['Server']:
+        config['Server']['app_port'] = '10086'
+    if 'auth_req' not in config['Server']:
+        config['Server']['auth_req'] = 'true'
+    if 'version' not in config['Server'] or config['Server']['version'] != DASHBOARD_VERSION:
+        config['Server']['version'] = DASHBOARD_VERSION
+    if 'dashboard_refresh_interval' not in config['Server']:
+        config['Server']['dashboard_refresh_interval'] = '60000'
+    if 'dashboard_sort' not in config['Server']:
+        config['Server']['dashboard_sort'] = 'status'
+    if 'dashboard_theme' not in config['Server']:
+        config['Server']['dashboard_theme'] = 'dark'
+    # Default dashboard peers setting
+    if "Peers" not in config:
+        config['Peers'] = {}
+    if 'peer_global_DNS' not in config['Peers']:
+        wg_dash_global_dns = os.environ.get('WG_DASH_DNS')
+        config['Peers']['peer_global_DNS'] = wg_dash_global_dns
+    if 'peer_endpoint_allowed_ip' not in config['Peers']:
+        peer_endpoint_allowed_ip = os.environ.get('WG_DASH_PEER_ENDPOINT_ALLOWED_IP')
+        config['Peers']['peer_endpoint_allowed_ip'] = peer_endpoint_allowed_ip
+    if 'peer_display_mode' not in config['Peers']:
+        config['Peers']['peer_display_mode'] = 'grid'
+    if 'remote_endpoint' not in config['Peers']:
+        server_ip = os.environ.get('WG_DASH_SERVER_IP')
+        config['Peers']['remote_endpoint'] = server_ip
+    if 'peer_MTU' not in config['Peers']:
+        wg_dash_mtu = os.environ.get('WG_DASH_MTU')
+        config['Peers']['peer_MTU'] = wg_dash_mtu
+    if 'peer_keep_alive' not in config['Peers']:
+        wg_dash_keep_alive = os.environ.get('WG_DASH_KEEP_ALIVE')
+        config['Peers']['peer_keep_alive'] = wg_dash_keep_alive
+    set_dashboard_conf(config)
+    config.clear()
+
+
+
+"""
+Configure DashBoard before start web-server
+"""
+
+
+def run_dashboard():
+    init_dashboard()
+    #global UPDATE
+    #UPDATE = check_update()
+    config = configparser.ConfigParser(strict=False)
+    config.read('wg-dashboard.ini')
+    # global app_ip
+    app_ip = config.get("Server", "app_ip")
+    # global app_port
+    app_port = config.get("Server", "app_port")
+    global WG_CONF_PATH
+    WG_CONF_PATH = config.get("Server", "wg_conf_path")
+    config.clear()
+
+    return app
+
+init_dashboard()
+run_dashboard()
+
+
+
+
+def connect_db():
+    """
+    Connect to the database
+    @return: sqlite3.Connection
+    """
+    return sqlite3.connect(os.path.join(configuration_path, 'db', 'wgdashboard.db'))
+
+
+
+
+
+
 
 
 # Get all keys from a configuration
@@ -1748,77 +1859,7 @@ def traceroute_ip():
         return "Error"
 
 
-"""
-Dashboard Initialization
-"""
 
-
-def init_dashboard():
-    """
-    Create dashboard default configuration.
-    """
-    
-
-    # Set Default INI File
-    if not os.path.isfile(DASHBOARD_CONF):
-        open(DASHBOARD_CONF, "w+").close()
-    config = get_dashboard_conf()
-    # Default dashboard account setting
-    if "Account" not in config:
-        config['Account'] = {}
-    if "username" not in config['Account']:
-        wg_dash_user = os.environ.get('WG_DASH_USER')
-        config['Account']['username'] = wg_dash_user
-    if "password" not in config['Account']:
-        wg_dash_pass = os.environ.get('WG_DASH_PASS')
-        # Hash the password using bcrypt
-        salt = bcrypt.gensalt(rounds=12)
-        hashed_password_bytes = bcrypt.hashpw(wg_dash_pass.encode('utf-8'), salt)
-        # Convert the hashed password bytes to a string and remove the leading 'b'
-        hashed_password_str = hashed_password_bytes.decode('utf-8').lstrip('b')
-        hashpassword_output = f"{hashed_password_str}"
-        config['Account']['password'] = hashpassword_output
-    # Default dashboard server setting
-    if "Server" not in config:
-        config['Server'] = {}
-    if 'wg_conf_path' not in config['Server']:
-        config['Server']['wg_conf_path'] = '/etc/wireguard'
-    if 'app_ip' not in config['Server']:
-        config['Server']['app_ip'] = '0.0.0.0'
-    if 'app_port' not in config['Server']:
-        config['Server']['app_port'] = '10086'
-    if 'auth_req' not in config['Server']:
-        config['Server']['auth_req'] = 'true'
-    if 'version' not in config['Server'] or config['Server']['version'] != DASHBOARD_VERSION:
-        config['Server']['version'] = DASHBOARD_VERSION
-    if 'dashboard_refresh_interval' not in config['Server']:
-        config['Server']['dashboard_refresh_interval'] = '60000'
-    if 'dashboard_sort' not in config['Server']:
-        config['Server']['dashboard_sort'] = 'status'
-    if 'dashboard_theme' not in config['Server']:
-        config['Server']['dashboard_theme'] = 'dark'
-    # Default dashboard peers setting
-    if "Peers" not in config:
-        config['Peers'] = {}
-    if 'peer_global_DNS' not in config['Peers']:
-        wg_dash_global_dns = os.environ.get('WG_DASH_DNS')
-        config['Peers']['peer_global_DNS'] = wg_dash_global_dns
-    if 'peer_endpoint_allowed_ip' not in config['Peers']:
-        peer_endpoint_allowed_ip = os.environ.get('WG_DASH_PEER_ENDPOINT_ALLOWED_IP')
-        config['Peers']['peer_endpoint_allowed_ip'] = peer_endpoint_allowed_ip
-    if 'peer_display_mode' not in config['Peers']:
-        config['Peers']['peer_display_mode'] = 'grid'
-    if 'remote_endpoint' not in config['Peers']:
-        server_ip = os.environ.get('WG_DASH_SERVER_IP')
-        config['Peers']['remote_endpoint'] = server_ip
-    if 'peer_MTU' not in config['Peers']:
-        wg_dash_mtu = os.environ.get('WG_DASH_MTU')
-        config['Peers']['peer_MTU'] = wg_dash_mtu
-    if 'peer_keep_alive' not in config['Peers']:
-        wg_dash_keep_alive = os.environ.get('WG_DASH_KEEP_ALIVE')
-        config['Peers']['peer_keep_alive'] = wg_dash_keep_alive
-    set_dashboard_conf(config)
-    config.clear()
 
 
 def check_update():
@@ -1846,26 +1887,7 @@ def check_update():
         return "false"
 
 
-"""
-Configure DashBoard before start web-server
-"""
 
-
-def run_dashboard():
-    init_dashboard()
-    #global UPDATE
-    #UPDATE = check_update()
-    config = configparser.ConfigParser(strict=False)
-    config.read('wg-dashboard.ini')
-    # global app_ip
-    app_ip = config.get("Server", "app_ip")
-    # global app_port
-    app_port = config.get("Server", "app_port")
-    global WG_CONF_PATH
-    WG_CONF_PATH = config.get("Server", "wg_conf_path")
-    config.clear()
-
-    return app
 
 
 """
