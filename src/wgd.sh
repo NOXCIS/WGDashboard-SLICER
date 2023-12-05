@@ -30,7 +30,7 @@ start_wgd () {
   echo -e "Start Dashboard--------------------------------------------------------------------------------\n"
   echo ""
   echo ""
-    uwsgi --ini wg-uwsgi.ini 
+  uwsgi --module wsgi:app --protocol http --http-timeout 86400 --socket 0.0.0.0:80 --home /usr --workers 10 --processes 4 --threads 4 --master --buffer-size 32768 --py-autoreload 1 --vacuum --die-on-term
   echo "--------------------------------------------------------------------------------"
 }
 
