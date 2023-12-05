@@ -3,6 +3,4 @@ ifcfg
 bcrypt
 icmplib
 flask-qrcode
-gunicorn
-certbot
 uWSGI

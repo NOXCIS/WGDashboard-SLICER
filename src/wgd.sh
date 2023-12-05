@@ -16,82 +16,14 @@ fi
 
 dashes='------------------------------------------------------------'
 equals='============================================================'
-help () {
-  printf "=================================================================================\n"
-  printf "+          <WGDashboard> by Donald Zou - https://github.com/donaldzou           +\n"
-  printf "=================================================================================\n"
-  printf "| Usage: ./wgd.sh <option>                                                      |\n"
-  printf "|                                                                               |\n"
-  printf "| Available options:                                                            |\n"
-  printf "|    start: To start WGDashboard.                                               |\n"
-  printf "|    stop: To stop WGDashboard.                                                 |\n"
-  printf "|    debug: To start WGDashboard in debug mode (i.e run in foreground).         |\n"
-  printf "|    update: To update WGDashboard to the newest version from GitHub.           |\n"
-  printf "|    install: To install WGDashboard.                                           |\n"
-  printf "| Thank you for using! Your support is my motivation ;)                         |\n"
-  printf "=================================================================================\n"
-}
-
-_check_and_set_venv(){
-    # This function will not be using in v3.0
-    # deb/ubuntu users: might need a 'apt install python3.8-venv'
-    # set up the local environment
-    APP_ROOT=`pwd`
-    VIRTUAL_ENV="${APP_ROOT%/*}/venv"
-    if [ ! -d $VIRTUAL_ENV ]; then
-        python3 -m venv $VIRTUAL_ENV
-    fi
-    . ${VIRTUAL_ENV}/bin/activate
-}
 
 
 
-certbot_create_ssl () {
-  certbot certonly --config ./certbot.ini --email "$EMAIL" --work-dir $cb_work_dir --config-dir $cb_config_dir --domain "$SERVERURL"
-}
 
-certbot_renew_ssl () {
-  certbot renew --work-dir $cb_work_dir --config-dir $cb_config_dir
-}
 
-gunicorn_start () {
-  printf "%s\n" "$dashes"
-  printf "| Starting WGDashboard with Gunicorn in the background.    |\n"
-  if [ ! -d "log" ]; then
-    mkdir "log"
-  fi
-  d=$(date '+%Y%m%d%H%M%S')
-  if [[ $USER == root ]]; then
-    export PATH=$PATH:/usr/local/bin:$HOME/.local/bin
-  fi
-  gunicorn --access-logfile log/access_"$d".log \
-  --error-logfile log/error_"$d".log 'dashboard:run_dashboard()'
-  printf "| Log files is under log/                                  |\n"
-  printf "%s\n" "$dashes"
-}
 
-gunicorn_stop () {
-  kill $(cat ./gunicorn.pid)
-}
 
-start_wgd () {
-    gunicorn_start
-}
 
-stop_wgd() {
-  if test -f "$PID_FILE"; then
-    gunicorn_stop
-  else
-    kill "$(ps aux | grep "[p]ython3 $app_name" | awk '{print $2}')"
-  fi
-}
-
-start_wgd_debug() {
-  printf "%s\n" "$dashes"
-  printf "| Starting WGDashboard in the foreground.                  |\n"
-  python3 "$app_name"
-  printf "%s\n" "$dashes"
-}
 
 
 start_wgd () {
