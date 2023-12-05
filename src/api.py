@@ -4,6 +4,8 @@ from util import *
 notEnoughParameter = {"status": False, "reason": "Please provide all required parameters."}
 good = {"status": True, "reason": ""}
 
+def ret(status=True, reason="", data=""):
+    return {"status": status, "reason": reason, "data": data}
 
 def togglePeerAccess(data, g):
     checkUnlock = g.cur.execute(f"SELECT * FROM {data['config']} WHERE id='{data['peerID']}'").fetchone()
@@ -135,3 +137,12 @@ class addConfiguration:
                 return {"status": False, "reason": "Can't delete peer", "data": str(e)}
 
             return good
+        
+class settings:
+    def setTheme(self, theme, config, setConfig):
+        themes = ['light', 'dark']
+        if theme not in themes: 
+            return ret(status=False, reason="Theme does not exist")
+        config['Server']['dashboard_theme'] = theme
+        setConfig(config)
+        return ret()

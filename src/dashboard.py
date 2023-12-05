@@ -675,6 +675,7 @@ def auth_req():
         g.cur = g.db.cursor()
     conf = get_dashboard_conf()
     req = conf.get("Server", "auth_req")
+    session['theme'] = conf.get("Server", "dashboard_theme")
     session['update'] = UPDATE
     session['dashboard_version'] = DASHBOARD_VERSION
     if req == "true":
@@ -1642,6 +1643,15 @@ def deleteConfiguration():
 
     return returnData
 
+@app.route('/api/settings/setTheme', methods=['POST'])
+def setTheme():
+    data = request.get_json()
+    required = ['theme']
+    if not checkJSONAllParameter(required, data):
+        return jsonify(api.notEnoughParameter)
+    else:
+        return api.settings.setTheme(api.settings, data['theme'], get_dashboard_conf(), set_dashboard_conf)
+
 """
 Dashboard Tools Related
 """
@@ -1766,6 +1776,8 @@ def init_dashboard():
         config['Server']['dashboard_refresh_interval'] = '60000'
     if 'dashboard_sort' not in config['Server']:
         config['Server']['dashboard_sort'] = 'status'
+    if 'dashboard_theme' not in config['Server']:
+        config['Server']['dashboard_theme'] = 'dark'
     # Default dashboard peers setting
     if "Peers" not in config:
         config['Peers'] = {}
